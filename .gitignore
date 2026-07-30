@@ -1,0 +1,24 @@
+# Ignore generated training and testing CSV datasets
+data/dataLatih/*.csv
+data/dataUji/*.csv
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# Ignore Python cache
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Ignore runtime feedback log (data dinamis, bukan bagian model)
+data/feedback_log.json
+
+# Ignore temporary test/debug scripts
+app/test_*.py
+app/inspect_*.py
+app/add_*.py

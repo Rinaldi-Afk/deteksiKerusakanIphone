@@ -1,0 +1,251 @@
+{
+  "class_priors": {
+    "Antena Signal Rusak": 0.02309782608695652,
+    "Backdoor Rusak": 0.06793478260869565,
+    "Baterai Rusak": 0.18614130434782608,
+    "Housing Rusak": 0.03260869565217391,
+    "IC Audio Rusak": 0.002717391304347826,
+    "IC Cas Rusak": 0.002717391304347826,
+    "IC Power Rusak": 0.08967391304347826,
+    "IC WTR Rusak": 0.008152173913043478,
+    "Kamera Rusak": 0.04619565217391304,
+    "LCD Rusak": 0.33016304347826086,
+    "Mikrofon Rusak": 0.004076086956521739,
+    "Port Pengisian Rusak": 0.09239130434782608,
+    "Speaker Rusak": 0.033967391304347824,
+    "Tombol Rusak": 0.08016304347826086
+  },
+  "rules": [
+    {
+      "symptom_col": "Signal",
+      "symptom_val": "Hilang Total",
+      "hypotheses": [
+        {
+          "damage": "IC WTR Rusak",
+          "optimal_belief": 0.4003
+        },
+        {
+          "damage": "Antena Signal Rusak",
+          "optimal_belief": 0.5497
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Signal",
+      "symptom_val": "Bar Rendah",
+      "hypotheses": [
+        {
+          "damage": "Antena Signal Rusak",
+          "optimal_belief": 0.95
+        },
+        {
+          "damage": "IC WTR Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Baterai",
+      "symptom_val": "Daya Tahan Rendah/Gembung",
+      "hypotheses": [
+        {
+          "damage": "Baterai Rusak",
+          "optimal_belief": 0.95
+        },
+        {
+          "damage": "IC Cas Rusak",
+          "optimal_belief": 0.0
+        },
+        {
+          "damage": "IC Power Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "LCD",
+      "symptom_val": "Greenscreen",
+      "hypotheses": [
+        {
+          "damage": "LCD Rusak",
+          "optimal_belief": 0.95
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "LCD",
+      "symptom_val": "Gelap",
+      "hypotheses": [
+        {
+          "damage": "LCD Rusak",
+          "optimal_belief": 0.8609
+        },
+        {
+          "damage": "IC Power Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 0.1391
+    },
+    {
+      "symptom_col": "Wifi",
+      "symptom_val": "Hilang Timbul",
+      "hypotheses": [
+        {
+          "damage": "Antena Wifi Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 1.0
+    },
+    {
+      "symptom_col": "Touchscreen",
+      "symptom_val": "Tidak bisa disentuh",
+      "hypotheses": [
+        {
+          "damage": "Touchscreen Rusak",
+          "optimal_belief": 0.95
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Tegangan",
+      "symptom_val": "0,0",
+      "hypotheses": [
+        {
+          "damage": "IC Power Rusak",
+          "optimal_belief": 0.6836
+        },
+        {
+          "damage": "Baterai Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 0.3164
+    },
+    {
+      "symptom_col": "Tegangan",
+      "symptom_val": "0,6",
+      "hypotheses": [
+        {
+          "damage": "IC Power Rusak",
+          "optimal_belief": 0.827
+        },
+        {
+          "damage": "Baterai Rusak",
+          "optimal_belief": 0.123
+        },
+        {
+          "damage": "IC Cas Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Kamera",
+      "symptom_val": "Blank",
+      "hypotheses": [
+        {
+          "damage": "Kamera Rusak",
+          "optimal_belief": 0.95
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Konektor Cas",
+      "symptom_val": "Keluar masuk",
+      "hypotheses": [
+        {
+          "damage": "Port Pengisian Rusak",
+          "optimal_belief": 0.8001
+        }
+      ],
+      "uncertainty_theta": 0.1999
+    },
+    {
+      "symptom_col": "Konektor Cas",
+      "symptom_val": "Tidak Ngecas",
+      "hypotheses": [
+        {
+          "damage": "Port Pengisian Rusak",
+          "optimal_belief": 0.95
+        },
+        {
+          "damage": "IC Cas Rusak",
+          "optimal_belief": 0.0
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Speaker",
+      "symptom_val": "Rusak",
+      "hypotheses": [
+        {
+          "damage": "Speaker Rusak",
+          "optimal_belief": 0.9002
+        },
+        {
+          "damage": "IC Audio Rusak",
+          "optimal_belief": 0.0498
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Mikrofon",
+      "symptom_val": "Tidak Berfungsi",
+      "hypotheses": [
+        {
+          "damage": "Mikrofon Rusak",
+          "optimal_belief": 0.8021
+        },
+        {
+          "damage": "IC Audio Rusak",
+          "optimal_belief": 0.1479
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Backdoor",
+      "symptom_val": "Pecah/Retak",
+      "hypotheses": [
+        {
+          "damage": "Backdoor Rusak",
+          "optimal_belief": 0.95
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Housing",
+      "symptom_val": "Pecah/Retak/Bengkok",
+      "hypotheses": [
+        {
+          "damage": "Housing Rusak",
+          "optimal_belief": 0.95
+        }
+      ],
+      "uncertainty_theta": 0.05
+    },
+    {
+      "symptom_col": "Tombol",
+      "symptom_val": "Tidak Berfungsi",
+      "hypotheses": [
+        {
+          "damage": "Tombol Rusak",
+          "optimal_belief": 0.7417
+        }
+      ],
+      "uncertainty_theta": 0.2583
+    }
+  ]
+}
