@@ -22,3 +22,7 @@ data/feedback_log.json
 app/test_*.py
 app/inspect_*.py
 app/add_*.py
+
+# Ignore local Graphify AI knowledge graph output
+graphify-out/
+
