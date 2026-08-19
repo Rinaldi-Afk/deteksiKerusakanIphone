@@ -44,14 +44,14 @@
       "symptom_col": "Wifi",
       "symptom_val": "Hilang Timbul",
       "hypotheses": [
-        { "damage": "Antena Wifi Rusak", "initial_belief": 0.70 }
+        { "damage": "Antena Signal Rusak", "initial_belief": 0.70 }
       ]
     },
     {
       "symptom_col": "Touchscreen",
       "symptom_val": "Tidak bisa disentuh",
       "hypotheses": [
-        { "damage": "Touchscreen Rusak", "initial_belief": 0.85 }
+        { "damage": "LCD Rusak", "initial_belief": 0.85 }
       ]
     },
     {

@@ -22,11 +22,11 @@
       "hypotheses": [
         {
           "damage": "IC WTR Rusak",
-          "optimal_belief": 0.4003
+          "optimal_belief": 0.3891
         },
         {
           "damage": "Antena Signal Rusak",
-          "optimal_belief": 0.5497
+          "optimal_belief": 0.5609
         }
       ],
       "uncertainty_theta": 0.05
@@ -82,32 +82,32 @@
       "hypotheses": [
         {
           "damage": "LCD Rusak",
-          "optimal_belief": 0.8609
+          "optimal_belief": 0.8581
         },
         {
           "damage": "IC Power Rusak",
           "optimal_belief": 0.0
         }
       ],
-      "uncertainty_theta": 0.1391
+      "uncertainty_theta": 0.1419
     },
     {
       "symptom_col": "Wifi",
       "symptom_val": "Hilang Timbul",
       "hypotheses": [
         {
-          "damage": "Antena Wifi Rusak",
-          "optimal_belief": 0.0
+          "damage": "Antena Signal Rusak",
+          "optimal_belief": 0.95
         }
       ],
-      "uncertainty_theta": 1.0
+      "uncertainty_theta": 0.05
     },
     {
       "symptom_col": "Touchscreen",
       "symptom_val": "Tidak bisa disentuh",
       "hypotheses": [
         {
-          "damage": "Touchscreen Rusak",
+          "damage": "LCD Rusak",
           "optimal_belief": 0.95
         }
       ],
@@ -119,14 +119,14 @@
       "hypotheses": [
         {
           "damage": "IC Power Rusak",
-          "optimal_belief": 0.6836
+          "optimal_belief": 0.6909
         },
         {
           "damage": "Baterai Rusak",
-          "optimal_belief": 0.0
+          "optimal_belief": 0.0951
         }
       ],
-      "uncertainty_theta": 0.3164
+      "uncertainty_theta": 0.214
     },
     {
       "symptom_col": "Tegangan",
@@ -134,18 +134,18 @@
       "hypotheses": [
         {
           "damage": "IC Power Rusak",
-          "optimal_belief": 0.827
+          "optimal_belief": 0.866
         },
         {
           "damage": "Baterai Rusak",
-          "optimal_belief": 0.123
+          "optimal_belief": 0.0
         },
         {
           "damage": "IC Cas Rusak",
           "optimal_belief": 0.0
         }
       ],
-      "uncertainty_theta": 0.05
+      "uncertainty_theta": 0.134
     },
     {
       "symptom_col": "Kamera",
@@ -164,10 +164,10 @@
       "hypotheses": [
         {
           "damage": "Port Pengisian Rusak",
-          "optimal_belief": 0.8001
+          "optimal_belief": 0.95
         }
       ],
-      "uncertainty_theta": 0.1999
+      "uncertainty_theta": 0.05
     },
     {
       "symptom_col": "Konektor Cas",
@@ -175,14 +175,14 @@
       "hypotheses": [
         {
           "damage": "Port Pengisian Rusak",
-          "optimal_belief": 0.95
+          "optimal_belief": 0.8967
         },
         {
           "damage": "IC Cas Rusak",
           "optimal_belief": 0.0
         }
       ],
-      "uncertainty_theta": 0.05
+      "uncertainty_theta": 0.1033
     },
     {
       "symptom_col": "Speaker",
@@ -190,11 +190,11 @@
       "hypotheses": [
         {
           "damage": "Speaker Rusak",
-          "optimal_belief": 0.9002
+          "optimal_belief": 0.95
         },
         {
           "damage": "IC Audio Rusak",
-          "optimal_belief": 0.0498
+          "optimal_belief": 0.0
         }
       ],
       "uncertainty_theta": 0.05
@@ -205,11 +205,11 @@
       "hypotheses": [
         {
           "damage": "Mikrofon Rusak",
-          "optimal_belief": 0.8021
+          "optimal_belief": 0.95
         },
         {
           "damage": "IC Audio Rusak",
-          "optimal_belief": 0.1479
+          "optimal_belief": 0.0
         }
       ],
       "uncertainty_theta": 0.05
@@ -242,10 +242,10 @@
       "hypotheses": [
         {
           "damage": "Tombol Rusak",
-          "optimal_belief": 0.7417
+          "optimal_belief": 0.7497
         }
       ],
-      "uncertainty_theta": 0.2583
+      "uncertainty_theta": 0.2503
     }
   ]
 }

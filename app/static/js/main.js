@@ -382,8 +382,9 @@ function renderBeliefTable(rules) {
 }
 
 function renderPriorTable(priors) {
-  const tbody   = document.getElementById('prior-tbody');
-  const sorted  = Object.entries(priors).sort((a, b) => b[1] - a[1]);
+  const tbody = document.getElementById('prior-tbody');
+  if (!tbody) return;
+  const sorted = Object.entries(priors).sort((a, b) => b[1] - a[1]);
   const maxPrior = sorted[0][1];
   tbody.innerHTML = sorted.map(([cls, p]) => {
     const w = (p / maxPrior * 100).toFixed(1);
