@@ -44,11 +44,15 @@ app = Flask(
 
 
 @app.route('/')
+@app.route('/api')
+@app.route('/api/index')
 def index():
     return render_template('index.html')
 
 
 @app.route('/diagnosa', methods=['POST'])
+@app.route('/api/diagnosa', methods=['POST'])
+@app.route('/api/index/diagnosa', methods=['POST'])
 def diagnosa():
     """
     Menerima JSON: {"nama": "...", "tipe_hp": "...", "keluhan": "..."}
@@ -140,6 +144,8 @@ def diagnosa():
 
 
 @app.route('/model-info')
+@app.route('/api/model-info')
+@app.route('/api/index/model-info')
 def model_info():
     """Mengembalikan seluruh basis pengetahuan optimal (untuk menu Pengembangan)."""
     return jsonify({
@@ -151,6 +157,8 @@ def model_info():
 
 
 @app.route('/feedback', methods=['POST'])
+@app.route('/api/feedback', methods=['POST'])
+@app.route('/api/index/feedback', methods=['POST'])
 def feedback():
     """
     Menerima JSON berisi data kasus baru:
