@@ -7,7 +7,6 @@ import os
 from threading import Lock
 from flask import Flask, render_template, request, jsonify
 
-from core.normalizer import normalize_text
 from core.llm_extractor import extract_features_llm
 from core.ds_engine import DSEngine
 
@@ -60,7 +59,7 @@ def diagnosa():
     if not keluhan_raw:
         return jsonify({'success': False, 'error': 'Keluhan tidak boleh kosong.'}), 400
 
-    normalized = normalize_text(keluhan_raw)
+    keluhan_lower = keluhan_raw.lower()
 
     # ---------------------------------------------------------------
     # Pintu Gerbang Filter Software (Software Gate)
@@ -72,7 +71,7 @@ def diagnosa():
         'lupa password', 'stuck apple', 'logo apple aja'
     ]
     
-    is_software = any(k in normalized for k in sw_keywords) or any(k in keluhan_raw.lower() for k in sw_keywords)
+    is_software = any(k in keluhan_lower for k in sw_keywords)
 
     if is_software:
         # Default empty features
@@ -90,7 +89,6 @@ def diagnosa():
             },
             'input': {
                 'raw': keluhan_raw,
-                'normalized': normalized,
             },
             'features': empty_features,
             'top_diagnosis': 'Masalah / Kerusakan Software',
@@ -124,7 +122,6 @@ def diagnosa():
         },
         'input': {
             'raw': keluhan_raw,
-            'normalized': normalized,
         },
         'features': features,
         'is_software': False,
