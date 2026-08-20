@@ -36,7 +36,11 @@ engine = DSEngine(KNOWLEDGE_BASE)
 # ---------------------------------------------------------------
 # Flask App
 # ---------------------------------------------------------------
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(APP_DIR, 'templates'),
+    static_folder=os.path.join(APP_DIR, 'static')
+)
 
 
 @app.route('/')
