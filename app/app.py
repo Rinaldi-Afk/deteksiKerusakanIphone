@@ -6,7 +6,7 @@ import json
 import os
 import sys
 from threading import Lock
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 
 # Menambahkan direktori app ke sys.path agar import lokal berjalan di Vercel
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,6 +48,11 @@ app = Flask(
 @app.route('/api/index')
 def index():
     return render_template('index.html')
+
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(os.path.join(APP_DIR, 'static'), filename)
 
 
 @app.route('/diagnosa', methods=['POST'])
