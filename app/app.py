@@ -4,8 +4,14 @@ Flask Web Application Backend
 """
 import json
 import os
+import sys
 from threading import Lock
 from flask import Flask, render_template, request, jsonify
+
+# Menambahkan direktori app ke sys.path agar import lokal berjalan di Vercel
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
 
 from core.llm_extractor import extract_features_llm
 from core.ds_engine import DSEngine
