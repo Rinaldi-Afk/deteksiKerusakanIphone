@@ -923,7 +923,79 @@ body.mode-technician .mode-tech-hide {
 }
 
 @media (max-width: 860px) {
-  .chat-diag-layout { grid-template-columns: 1fr; }
+  .app-wrapper {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .sidebar-logo {
+    padding: 16px 20px;
+  }
+  
+  .sidebar-stats {
+    padding: 10px 20px 16px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sidebar-stat-title {
+    width: 100%;
+    margin-bottom: 2px;
+  }
+
+  .sidebar-stat-item {
+    flex: 1 1 30%;
+    min-width: 90px;
+    padding: 6px 10px;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-size: 19px;
+  }
+
+  .page-subtitle {
+    font-size: 12.5px;
+  }
+
+  .chat-diag-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .chat-card {
+    height: 450px;
+  }
+
+  .chat-messages {
+    max-height: 320px;
+  }
+
+  .result-card {
+    min-height: auto;
+    padding: 18px;
+  }
 }
 
 .chat-col, .result-col {
