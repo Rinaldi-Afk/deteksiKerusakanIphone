@@ -4,8 +4,14 @@ Flask Web Application Backend
 """
 import json
 import os
+import sys
 from threading import Lock
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
+
+# Menambahkan direktori app ke sys.path agar import lokal berjalan di Vercel
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
 
 from core.llm_extractor import extract_features_llm
 from core.ds_engine import DSEngine
@@ -30,15 +36,28 @@ engine = DSEngine(KNOWLEDGE_BASE)
 # ---------------------------------------------------------------
 # Flask App
 # ---------------------------------------------------------------
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(APP_DIR, 'templates'),
+    static_folder=os.path.join(APP_DIR, 'static')
+)
 
 
 @app.route('/')
+@app.route('/api')
+@app.route('/api/index')
 def index():
     return render_template('index.html')
 
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(os.path.join(APP_DIR, 'static'), filename)
+
+
 @app.route('/diagnosa', methods=['POST'])
+@app.route('/api/diagnosa', methods=['POST'])
+@app.route('/api/index/diagnosa', methods=['POST'])
 def diagnosa():
     """
     Menerima JSON: {"nama": "...", "tipe_hp": "...", "keluhan": "..."}
@@ -111,8 +130,14 @@ def diagnosa():
         })
 
     # Jika bukan software, jalankan model Dempster-Shafer hardware
-    features = extract_features_llm(keluhan_raw)
+    features, ai_advice = extract_features_llm(keluhan_raw, tipe_hp)
     result = engine.run_inference(features)
+
+    is_general = result.get('used_fallback', False)
+    if is_general:
+        top_diagnosis = "Gejala Umum / Perlu Pemeriksaan"
+    else:
+        top_diagnosis = result.get('top_diagnosis')
 
     return jsonify({
         'success': True,
@@ -124,12 +149,17 @@ def diagnosa():
             'raw': keluhan_raw,
         },
         'features': features,
+        'ai_advice': ai_advice,
         'is_software': False,
+        'is_general': is_general,
         **result,
+        'top_diagnosis': top_diagnosis,
     })
 
 
 @app.route('/model-info')
+@app.route('/api/model-info')
+@app.route('/api/index/model-info')
 def model_info():
     """Mengembalikan seluruh basis pengetahuan optimal (untuk menu Pengembangan)."""
     return jsonify({
@@ -141,6 +171,8 @@ def model_info():
 
 
 @app.route('/feedback', methods=['POST'])
+@app.route('/api/feedback', methods=['POST'])
+@app.route('/api/index/feedback', methods=['POST'])
 def feedback():
     """
     Menerima JSON berisi data kasus baru:
