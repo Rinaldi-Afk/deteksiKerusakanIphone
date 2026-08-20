@@ -923,38 +923,71 @@ body.mode-technician .mode-tech-hide {
 }
 
 @media (max-width: 860px) {
+  /* Sidebar jadi top bar horizontal yang compact */
   .app-wrapper {
     flex-direction: column;
   }
-  
+
   .sidebar {
     position: relative;
     width: 100%;
     height: auto;
+    min-height: unset;
+    left: unset; top: unset; bottom: unset;
     border-right: none;
     border-bottom: 1px solid var(--gray-200);
+    z-index: 50;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
 
   .sidebar-logo {
-    padding: 16px 20px;
+    padding: 0;
+    border-bottom: none;
+    flex-shrink: 0;
+    margin-right: auto;
   }
-  
+
+  .sidebar-logo .brand-name {
+    font-size: 15px;
+  }
+
+  .sidebar-logo .brand-sub {
+    font-size: 10px;
+  }
+
   .sidebar-stats {
-    padding: 10px 20px 16px;
+    padding: 0;
+    flex: 1 1 auto;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
+    justify-content: flex-end;
   }
 
   .sidebar-stat-title {
-    width: 100%;
-    margin-bottom: 2px;
+    display: none;
   }
 
   .sidebar-stat-item {
-    flex: 1 1 30%;
-    min-width: 90px;
-    padding: 6px 10px;
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    gap: 6px;
+    border-radius: 20px;
+    font-size: 11px;
+    background: var(--gray-50);
+  }
+
+  .sidebar-stat-item .stat-lbl {
+    font-size: 11px;
+  }
+
+  .sidebar-stat-item .stat-val {
+    font-size: 12px;
   }
 
   .sidebar-footer {
@@ -964,37 +997,50 @@ body.mode-technician .mode-tech-hide {
   .main-content {
     margin-left: 0;
     max-width: 100%;
-    padding: 16px;
+    padding: 14px;
   }
 
   .page-header {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
   .page-title {
-    font-size: 19px;
+    font-size: 18px;
   }
 
   .page-subtitle {
-    font-size: 12.5px;
+    font-size: 12px;
   }
 
   .chat-diag-layout {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
   }
 
   .chat-card {
-    height: 450px;
+    height: 440px;
   }
 
   .chat-messages {
-    max-height: 320px;
+    max-height: 300px;
   }
 
   .result-card {
     min-height: auto;
-    padding: 18px;
+    padding: 16px;
+  }
+
+  .chat-action-btn {
+    font-size: 11.5px;
+    padding: 6px 11px;
+  }
+
+  .customer-res-header {
+    gap: 10px;
+  }
+
+  .customer-res-title {
+    font-size: 16px !important;
   }
 }
 
