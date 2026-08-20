@@ -130,8 +130,14 @@ def diagnosa():
         })
 
     # Jika bukan software, jalankan model Dempster-Shafer hardware
-    features = extract_features_llm(keluhan_raw)
+    features, ai_advice = extract_features_llm(keluhan_raw, tipe_hp)
     result = engine.run_inference(features)
+
+    is_general = result.get('used_fallback', False)
+    if is_general:
+        top_diagnosis = "Gejala Umum / Perlu Pemeriksaan"
+    else:
+        top_diagnosis = result.get('top_diagnosis')
 
     return jsonify({
         'success': True,
@@ -143,8 +149,11 @@ def diagnosa():
             'raw': keluhan_raw,
         },
         'features': features,
+        'ai_advice': ai_advice,
         'is_software': False,
+        'is_general': is_general,
         **result,
+        'top_diagnosis': top_diagnosis,
     })
 
 

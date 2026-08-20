@@ -957,3 +957,45 @@ body.mode-technician .mode-tech-hide {
   min-height: 560px;
 }
 
+/* Quick Action Buttons inside Chat */
+.chat-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.chat-action-btn {
+  background: var(--white);
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  padding: 7px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.chat-action-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.chat-action-btn.secondary {
+  border-color: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.chat-action-btn.secondary:hover {
+  background: var(--gray-200);
+  color: var(--gray-900);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+

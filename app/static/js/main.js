@@ -24,9 +24,16 @@ function escHtml(str) {
 }
 
 // ============================================================
-// Chatbot State Machine
+// Chatbot State Machine (Max 3 consultations per session)
 // ============================================================
-let chatState = { step: 0, name: '', tipe_hp: '', keluhan: '' };
+let chatState = {
+  step: 0, // 0: ask name, 1: ask phone type, 2: ask complaint, 3: post-diagnosis waiting choice
+  name: '',
+  tipe_hp: '',
+  keluhan: '',
+  count: 0,
+  max_count: 3
+};
 
 function addMsg(text, from, isHtml) {
   const container = document.getElementById('chat-messages');
@@ -57,6 +64,39 @@ function removeTyping() {
   if (el) el.remove();
 }
 
+function resetChatSession() {
+  chatState = { step: 0, name: '', tipe_hp: '', keluhan: '', count: 0, max_count: 3 };
+  resultPanel.innerHTML = '<div class="result-placeholder"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Hasil diagnosis akan muncul di sini setelah percakapan selesai.</span></div>';
+  if (btnPrint) btnPrint.style.display = 'none';
+  addMsg('Sesi baru dimulai! 😊 Boleh tahu nama kamu?', 'bot');
+  const input = document.getElementById('chat-input');
+  if (input) {
+    input.placeholder = 'Ketik nama kamu...';
+    input.focus();
+  }
+}
+
+function promptNextComplaint() {
+  if (chatState.count >= chatState.max_count) {
+    addMsg('⚠️ Batas konsultasi untuk sesi ini (3/3) telah tercapai. Silakan mulai sesi baru untuk mendiagnosa perangkat lain.', 'bot');
+    const actionDiv = addMsg('', 'bot', true);
+    actionDiv.innerHTML = `
+      <div class="chat-action-buttons">
+        <button class="chat-action-btn" onclick="resetChatSession()">🔄 Mulai Sesi Baru</button>
+      </div>`;
+    return;
+  }
+
+  chatState.step = 2; // Langsung minta keluhan berikutnya
+  const nextNum = chatState.count + 1;
+  addMsg(`Silakan ceritakan keluhan lainnya pada <b>${escHtml(chatState.tipe_hp)}</b> kamu (Konsultasi ke-${nextNum} dari 3):`, 'bot', true);
+  const input = document.getElementById('chat-input');
+  if (input) {
+    input.placeholder = 'Ketik keluhan lainnya...';
+    input.focus();
+  }
+}
+
 function handleChatSend() {
   const input = document.getElementById('chat-input');
   const text  = input.value.trim();
@@ -67,23 +107,37 @@ function handleChatSend() {
   if (chatState.step === 0) {
     chatState.name = text;
     chatState.step = 1;
-    setTimeout(() => addMsg('Halo, ' + text + '! Boleh tahu tipe iPhone kamu? (contoh: iPhone 12, iPhone 13 Pro)', 'bot'), 400);
+    setTimeout(() => {
+      addMsg('Halo, <b>' + escHtml(text) + '</b>! Boleh tahu tipe iPhone kamu? (contoh: iPhone 12, iPhone 13 Pro)', 'bot', true);
+      input.placeholder = 'Ketik tipe iPhone...';
+    }, 400);
   } else if (chatState.step === 1) {
     chatState.tipe_hp = text;
     chatState.step = 2;
-    setTimeout(() => addMsg('Oke, ' + chatState.tipe_hp + '. Sekarang ceritakan keluhannya — apa yang terasa tidak normal dari ponsel kamu?', 'bot'), 400);
+    setTimeout(() => {
+      addMsg('Oke, <b>' + escHtml(chatState.tipe_hp) + '</b>. Sekarang ceritakan keluhannya — apa yang terasa tidak normal dari ponsel kamu?', 'bot', true);
+      input.placeholder = 'Ketik keluhan iPhone kamu...';
+    }, 400);
   } else if (chatState.step === 2) {
     chatState.keluhan = text;
     chatState.step = 3;
     showTyping();
     setTimeout(() => runChatDiagnosis(), 600);
   } else {
-    // Diagnosis sudah ada — reset untuk sesi baru
-    chatState = { step: 0, name: '', tipe_hp: '', keluhan: '' };
-    resultPanel.innerHTML = '<div class="result-placeholder"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Hasil diagnosis akan muncul di sini setelah percakapan selesai.</span></div>';
-    if (btnPrint) btnPrint.style.display = 'none';
-    addMsg('Siap! Ketik nama kamu untuk memulai diagnosa baru.', 'bot');
-    chatState.step = 0;
+    // Jika pengguna mengetik teks langsung setelah diagnosa selesai, anggap sebagai keluhan lanjutan (jika kuota masih ada)
+    if (chatState.count < chatState.max_count) {
+      chatState.keluhan = text;
+      chatState.step = 3;
+      showTyping();
+      setTimeout(() => runChatDiagnosis(), 600);
+    } else {
+      addMsg('Batas 3x konsultasi untuk sesi ini telah selesai. Silakan klik tombol di bawah untuk memulai sesi baru.', 'bot');
+      const actionDiv = addMsg('', 'bot', true);
+      actionDiv.innerHTML = `
+        <div class="chat-action-buttons">
+          <button class="chat-action-btn" onclick="resetChatSession()">🔄 Mulai Sesi Baru</button>
+        </div>`;
+    }
   }
 }
 
@@ -105,6 +159,7 @@ async function runChatDiagnosis() {
     }
 
     window._lastResult = data;
+    chatState.count++;
 
     // Fill print fields
     if (printNama)    printNama.textContent    = data.customer.nama;
@@ -115,9 +170,39 @@ async function runChatDiagnosis() {
 
     renderResult(data);
 
-    const diagnosa = data.top_diagnosis || '-';
-    addMsg('Analisis selesai! Hasil ditampilkan di sebelah kanan. Perkiraan kerusakan: ' + diagnosa + '.', 'bot');
-    addMsg('Ketik pesan apa saja untuk memulai diagnosa baru.', 'bot');
+    if (data.is_general) {
+      addMsg('<b>Analisis AI:</b> ' + escHtml(data.ai_advice || 'Gejala yang Anda keluhkan tidak spesifik mengarah ke kerusakan komponen hardware tertentu.'), 'bot', true);
+      addMsg('Rekomendasi langkah pemeriksaan mandiri telah ditampilkan di sebelah kanan.', 'bot');
+    } else {
+      const diagnosa = data.top_diagnosis || '-';
+      addMsg('Analisis selesai! Berdasarkan inferensi pakar DS-PSO, perkiraan kerusakan: <b>' + escHtml(diagnosa) + '</b>.', 'bot', true);
+      if (data.ai_advice && data.ai_advice.length > 5) {
+        addMsg('💡 <i>Catatan Tambahan: ' + escHtml(data.ai_advice) + '</i>', 'bot', true);
+      }
+    }
+
+    // Tampilkan tombol aksi interaktif untuk konsultasi berikutnya
+    const remaining = chatState.max_count - chatState.count;
+    const actionDiv = addMsg('', 'bot', true);
+
+    if (chatState.count < chatState.max_count) {
+      actionDiv.innerHTML = `
+        <div style="font-size:12px; color:var(--gray-600); margin-bottom:8px;">
+          Sesi aktif: <b>${escHtml(chatState.name)}</b> (${escHtml(chatState.tipe_hp)}) · Sisa kuota: <b>${remaining}x lagi</b>
+        </div>
+        <div class="chat-action-buttons">
+          <button class="chat-action-btn" onclick="promptNextComplaint()">➕ Tanya / Diagnosa Keluhan Lain</button>
+          <button class="chat-action-btn secondary" onclick="resetChatSession()">🔄 Selesai & Mulai Sesi Baru</button>
+        </div>`;
+    } else {
+      actionDiv.innerHTML = `
+        <div style="font-size:12px; color:var(--gray-600); margin-bottom:8px;">
+          ✅ Anda telah mencapai batas maksimal <b>3x konsultasi</b> untuk sesi ini.
+        </div>
+        <div class="chat-action-buttons">
+          <button class="chat-action-btn" onclick="resetChatSession()">🔄 Mulai Sesi Baru</button>
+        </div>`;
+    }
 
   } catch (err) {
     removeTyping();
@@ -184,6 +269,58 @@ function renderResult(data) {
         <p style="margin-bottom:8px;"><b>Rekomendasi Tindakan:</b></p>
         <p style="margin-bottom:4px;">Untuk memastikan keamanan data dan lisensi sistem perangkat Anda, masalah perangkat lunak (software) tingkat lanjut ini sebaiknya ditangani secara resmi.</p>
         <p style="margin-bottom:0;">Silakan bawa iPhone Anda ke <b>Service Center Resmi Apple (AASP / iBox)</b> terdekat untuk proses pemulihan sistem yang aman.</p>
+      </div>`;
+    return;
+  }
+
+  if (data.is_general) {
+    resultPanel.innerHTML = `
+      <div class="customer-res-container">
+        <div class="customer-res-header">
+          <div class="customer-res-icon" style="background:#FEF3C7; color:#D97706;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <div class="customer-res-info">
+            <div class="customer-res-label">Status Keluhan iPhone</div>
+            <div class="customer-res-title" style="font-size:18px;">Gejala Umum / Perlu Pemeriksaan Fisik</div>
+            <div class="customer-badge medium">🟡 Gejala Non-Spesifik Hardware</div>
+          </div>
+        </div>
+
+        <div class="customer-section">
+          <div class="customer-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Analisis Asisten AI
+          </div>
+          <div class="customer-section-p" style="background:#F0FDF4; border:1px solid #BBF7D0; padding:10px 12px; border-radius:8px; color:#166534; font-weight:500;">
+            ${escHtml(data.ai_advice || 'Gejala tidak langsung mengarah ke kerusakan komponen hardware tertentu.')}
+          </div>
+        </div>
+
+        <div class="customer-section">
+          <div class="customer-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Langkah Pengecekan Mandiri
+          </div>
+          <div style="font-size:13px; color:var(--gray-700); line-height:1.6; padding:10px 14px; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:8px;">
+            <ul style="margin-left:18px;">
+              <li style="margin-bottom:4px;"><b>Restart iPhone:</b> Muat ulang ponsel untuk menyegarkan memori RAM dan menghentikan proses latar belakang yang macet.</li>
+              <li style="margin-bottom:4px;"><b>Cek Kapasitas Memori:</b> Buka <i>Pengaturan > Umum > Penyimpanan iPhone</i> (pastikan ada sisa minimal 10GB).</li>
+              <li style="margin-bottom:4px;"><b>Cek Kesehatan Baterai:</b> Buka <i>Pengaturan > Baterai > Kesehatan Baterai</i> (jika di bawah 80%, baterai dapat menyebabkan perlambatan performa).</li>
+              <li style="margin-bottom:0;"><b>Hindari Suhu Ekstrem:</b> Jangan memainkan game berat saat ponsel sedang di-charge.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="customer-section">
+          <div class="customer-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            Saran Servis
+          </div>
+          <div class="customer-section-p">Jika ponsel tetap panas berlebih atau mati mendadak setelah langkah di atas, silakan bawa ke counter <b>NST Phone Repair</b> untuk pengecekan jalur arus motherboard dan konsumsi daya secara gratis.</div>
+        </div>
       </div>`;
     return;
   }
