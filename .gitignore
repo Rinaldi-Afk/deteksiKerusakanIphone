@@ -25,4 +25,7 @@ app/add_*.py
 
 # Ignore local Graphify AI knowledge graph output
 graphify-out/
+.agents/
 
+# Ignore environment variables
+.env

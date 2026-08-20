@@ -8,7 +8,7 @@ from threading import Lock
 from flask import Flask, render_template, request, jsonify
 
 from core.normalizer import normalize_text
-from core.feature_extractor import extract_features
+from core.llm_extractor import extract_features_llm
 from core.ds_engine import DSEngine
 
 db_lock = Lock()
@@ -113,7 +113,7 @@ def diagnosa():
         })
 
     # Jika bukan software, jalankan model Dempster-Shafer hardware
-    features = extract_features(normalized)
+    features = extract_features_llm(keluhan_raw)
     result = engine.run_inference(features)
 
     return jsonify({

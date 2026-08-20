@@ -45,6 +45,20 @@ IPHONE_TECHNICAL_MAP = {
     r'\bcharge\b': 'cas',
     r'\bcharger\b': 'cas',
     r'\bathena\b': 'antena',
+    # Kartu SIM & Sinyal
+    r'\bsim\b': 'sim',
+    r'\bsimcard\b': 'sim card',
+    r'\bsim card\b': 'sim card',
+    r'\bkartu sim\b': 'kartu sim',
+    r'\bkartu simnya\b': 'kartu simnya',
+    r'\bnelpon\b': 'telepon',
+    r'\bnelp\b': 'telepon',
+    r'\btelp\b': 'telepon',
+    r'\bsinyalnya\b': 'sinyal',
+    r'\bsignalnya\b': 'sinyal',
+    r'\bjaringannya\b': 'jaringan',
+    r'\bno signal\b': 'no signal',
+    r'\bno service\b': 'no service',
 }
 
 

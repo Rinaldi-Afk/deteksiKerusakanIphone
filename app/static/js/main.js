@@ -1,499 +1,19 @@
-/* ── JS utama NST Phone Repair (Unified Dashboard) ── */
+/* ── main.js — NST Phone Repair Chatbot ── */
 
-// DOM Elements
-const namaInput       = document.getElementById('nama-pelanggan');
-const tipeHpSelect    = document.getElementById('tipe-hp');
-const tipeHpCustomCon = document.getElementById('tipe-hp-custom-container');
-const tipeHpCustomInput= document.getElementById('tipe-hp-custom');
-const keluhanInput    = document.getElementById('keluhan-input');
-const btnDiagnosa     = document.getElementById('btn-diagnosa');
-const btnText         = document.getElementById('btn-text');
-const spinner         = document.getElementById('spinner');
-const normPreview     = document.getElementById('normalized-preview');
-const featuresBody    = document.getElementById('features-body');
-const resultPanel     = document.getElementById('result-panel');
-const btnPrint        = document.getElementById('btn-print');
+// ============================================================
+// DOM References
+// ============================================================
+const resultPanel = document.getElementById('result-panel');
+const btnPrint    = document.getElementById('btn-print');
+const printNama   = document.getElementById('print-nama');
+const printTipe   = document.getElementById('print-tipe');
+const printWaktu  = document.getElementById('print-waktu');
+const printKeluhan= document.getElementById('print-keluhan');
 
-// Print Elements
-const printNama       = document.getElementById('print-nama');
-const printTipe       = document.getElementById('print-tipe');
-const printWaktu      = document.getElementById('print-waktu');
-const printKeluhan    = document.getElementById('print-keluhan');
-
-// State terakhir untuk log pengembangan
 window._lastResult = null;
 
 // ============================================================
-// Event Listeners untuk Validasi Form
-// ============================================================
-
-// Monitor perubahan tipe HP
-tipeHpSelect.addEventListener('change', () => {
-  if (tipeHpSelect.value === 'Lainnya') {
-    tipeHpCustomCon.style.display = 'block';
-    tipeHpCustomInput.focus();
-  } else {
-    tipeHpCustomCon.style.display = 'none';
-    tipeHpCustomInput.value = '';
-  }
-  validateCustomerData();
-});
-
-// Monitor perubahan input nama dan input tipe HP custom
-namaInput.addEventListener('input', validateCustomerData);
-tipeHpCustomInput.addEventListener('input', validateCustomerData);
-
-// Monitor keluhan input
-keluhanInput.addEventListener('input', () => {
-  const keluhan = keluhanInput.value.trim();
-  if (keluhan.length >= 3) {
-    btnDiagnosa.disabled = false;
-  } else {
-    btnDiagnosa.disabled = true;
-  }
-});
-
-// Jalankan diagnosis jika tombol diklik atau Ctrl+Enter ditekan
-btnDiagnosa.addEventListener('click', runDiagnosis);
-keluhanInput.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 'Enter' && !btnDiagnosa.disabled) {
-    runDiagnosis();
-  }
-});
-
-// Fungsi validasi data pelanggan
-function validateCustomerData() {
-  const nama = namaInput.value.trim();
-  const tipeHp = tipeHpSelect.value;
-  let isTipeHpValid = tipeHp !== "";
-
-  if (tipeHp === 'Lainnya') {
-    isTipeHpValid = tipeHpCustomInput.value.trim() !== "";
-  }
-
-  if (nama.length > 0 && isTipeHpValid) {
-    keluhanInput.disabled = false;
-    keluhanInput.placeholder = "Contoh: baterai drop cepat habis, layar gelap tidak nyala, tidak bisa dicas... (Ctrl+Enter untuk diagnosa)";
-    
-    // Jika keluhan sudah diisi sebelumnya
-    if (keluhanInput.value.trim().length >= 3) {
-      btnDiagnosa.disabled = false;
-    }
-  } else {
-    keluhanInput.disabled = true;
-    btnDiagnosa.disabled = true;
-    keluhanInput.placeholder = "Isi nama pelanggan & tipe ponsel terlebih dahulu untuk mengaktifkan kolom keluhan...";
-  }
-}
-
-// ============================================================
-// Logika Diagnosis (POST Request)
-// ============================================================
-async function runDiagnosis() {
-  const nama = namaInput.value.trim();
-  let tipeHp = tipeHpSelect.value;
-  if (tipeHp === 'Lainnya') {
-    tipeHp = tipeHpCustomInput.value.trim();
-  }
-  const keluhan = keluhanInput.value.trim();
-
-  if (!nama || !tipeHp || !keluhan) {
-    return;
-  }
-
-  // Loading state
-  btnDiagnosa.disabled = true;
-  spinner.style.display = 'block';
-  btnText.textContent = 'Menganalisis...';
-
-  try {
-    const res = await fetch('/diagnosa', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nama, tipe_hp: tipeHp, keluhan }),
-    });
-    const data = await res.json();
-
-    if (!data.success) {
-      alert('Error: ' + (data.error || 'Terjadi kesalahan.'));
-      return;
-    }
-
-    window._lastResult = data;
-    
-    // Tampilkan tombol cetak
-    btnPrint.style.display = 'inline-flex';
-    
-    // Isi data cetak
-    printNama.textContent = data.customer.nama;
-    printTipe.textContent = data.customer.tipe_hp;
-    printWaktu.textContent = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
-    printKeluhan.textContent = data.input.raw;
-
-    // Render komponen visual
-    renderFeatures(data.features);
-    renderResult(data);
-    renderNormalized(data.input.normalized);
-    renderLastLog(data);
-
-  } catch (err) {
-    alert('Koneksi ke server gagal: ' + err.message);
-  } finally {
-    btnDiagnosa.disabled = false;
-    spinner.style.display = 'none';
-    btnText.textContent = 'Diagnosa Ulang';
-  }
-}
-
-// ---- Normalized text preview ----
-function renderNormalized(normalized) {
-  normPreview.style.display = 'block';
-  normPreview.innerHTML = `Teks ternormalisasi: <span>${escHtml(normalized)}</span>`;
-}
-
-// ---- Features table ----
-function renderFeatures(features) {
-  const NORMAL_VALS = ['Normal', '0,8 - 2,2'];
-  featuresBody.innerHTML = '';
-  Object.entries(features).forEach(([col, val]) => {
-    const isActive = !NORMAL_VALS.includes(val);
-    const badgeClass = isActive ? 'badge-active' : 'badge-normal';
-    featuresBody.innerHTML += `
-      <tr>
-        <td><b>${escHtml(col)}</b></td>
-        <td><span class="badge ${badgeClass}">${escHtml(val)}</span></td>
-      </tr>`;
-  });
-}
-
-// ---- Result panel ----
-// ---- Result panel ----
-function renderResult(data) {
-  if (data.is_software) {
-    resultPanel.innerHTML = `
-      <div class="fallback-notice" id="fallback-notice" style="display: block; background: var(--primary-light); border-color: #BFDBFE; color: var(--primary-dark);">
-        ℹ Masalah Sistem Operasi Terdeteksi (Software Gate Filter)
-      </div>
-      
-      <div class="top-diagnosis-box" style="background: var(--success-light); border-color: #A7F3D0;">
-        <div class="top-diag-icon" style="background: var(--success);">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-        </div>
-        <div>
-          <div class="top-diag-label" style="color: var(--success);">Kesimpulan Diagnosis</div>
-          <div class="top-diag-name" style="color: #065F46;">${escHtml(data.top_diagnosis)}</div>
-          <div class="top-diag-pct" style="color: #065F46;">Tingkat Keyakinan: <b>100.0%</b> · Deteksi Kata Kunci Sistem</div>
-        </div>
-      </div>
-      
-      <div class="card-title" style="font-size:12px; color:var(--gray-500); margin-bottom:10px;">
-        Panduan Solusi Penanganan Software iPhone
-      </div>
-      <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6; padding: 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px;">
-        <p style="margin-bottom: 8px;"><b>Rekomendasi Tindakan Teknisi:</b></p>
-        <ol style="margin-left: 20px;">
-          <li style="margin-bottom: 4px;">Sambungkan iPhone ke PC/Mac menggunakan kabel Lightning/USB-C original.</li>
-          <li style="margin-bottom: 4px;">Gunakan aplikasi resmi <b>Apple Devices / iTunes</b> atau tool pihak ketiga terpercaya seperti <b>3uTools</b>.</li>
-          <li style="margin-bottom: 4px;">Lakukan proses <b>Flash / Restore</b> menggunakan firmware iOS (.ipsw) resmi paling baru yang ditandatangani oleh Apple.</li>
-          <li style="margin-bottom: 4px;">Jika mengalami masalah aktivasi iCloud (Activation Lock), bantu pelanggan memulihkan Apple ID atau lakukan verifikasi kepemilikan.</li>
-        </ol>
-      </div>`;
-    return;
-  }
-
-  const topPct   = data.top_percentage;
-  const allDiag  = data.all_diagnoses;
-  const maxPct   = allDiag[0].percentage;
-
-  let barsHtml = allDiag.map((d, i) => {
-    const pct  = d.percentage;
-    const w    = maxPct > 0 ? (pct / maxPct * 100).toFixed(1) : 0;
-    const cls  = i === 0 ? 'bar-top' : 'bar-low';
-    return `
-      <div class="bar-row">
-        <span class="bar-label" title="${escHtml(d.damage)}">${escHtml(d.damage)}</span>
-        <div class="bar-track">
-          <div class="bar-fill ${cls}" style="width:${w}%"></div>
-        </div>
-        <span class="bar-pct">${pct.toFixed(1)}%</span>
-      </div>`;
-  }).join('');
-
-  // Dropdown opsi feedback
-  const DAMAGE_CLASSES = [
-    "Antena Signal Rusak",
-    "Antena Wifi Rusak",
-    "Backdoor Rusak",
-    "Baterai Rusak",
-    "Housing Rusak",
-    "IC Audio Rusak",
-    "IC Cas Rusak",
-    "IC Power Rusak",
-    "IC WTR Rusak",
-    "Kamera Rusak",
-    "LCD Rusak",
-    "Mikrofon Rusak",
-    "Port Pengisian Rusak",
-    "Speaker Rusak",
-    "Tombol Rusak",
-    "Touchscreen Rusak"
-  ];
-  
-  const optionsHtml = DAMAGE_CLASSES.map(cls => 
-    `<option value="${escHtml(cls)}">${escHtml(cls)}</option>`
-  ).join('');
-
-  resultPanel.innerHTML = `
-    <div class="fallback-notice" id="fallback-notice" style="display:${data.used_fallback ? 'block' : 'none'}">
-      ⚠ Tidak ada gejala spesifik terdeteksi. Klasifikasi dialihkan menggunakan probabilitas prior empiris model.
-    </div>
-    
-    <div class="top-diagnosis-box">
-      <div class="top-diag-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      </div>
-      <div>
-        <div class="top-diag-label">Kesimpulan Diagnosis</div>
-        <div class="top-diag-name">${escHtml(data.top_diagnosis)}</div>
-        <div class="top-diag-pct">Tingkat Keyakinan: <b>${topPct.toFixed(1)}%</b> · ${data.active_rules_count} aturan terpicu</div>
-      </div>
-    </div>
-    
-    <div class="card-title" style="font-size:12px; color:var(--gray-500); margin-bottom:10px;">
-      Distribusi Probabilitas Pignistik (Semua Kelas)
-    </div>
-    <div class="bar-list" style="margin-bottom: 20px;">${barsHtml}</div>
-    
-    <!-- Box Feedback / Pembelajaran Dinamis Model -->
-    <div class="feedback-box print-hide" style="margin-top: 20px; padding: 16px; background: var(--gray-50); border: 1.5px dashed var(--gray-200); border-radius: 8px;">
-      <div style="font-weight: 700; font-size: 12.5px; color: var(--gray-900); margin-bottom: 4px;">
-        Diagnosis Kurang Tepat?
-      </div>
-      <div style="font-size: 11.5px; color: var(--gray-500); margin-bottom: 10px; line-height: 1.4;">
-        Bantu model belajar dengan mengoreksi kerusakan yang sebenarnya terjadi. Prior empiris model akan langsung disesuaikan secara dinamis.
-      </div>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <select id="feedback-select" style="flex: 1; padding: 8px 10px; font-size: 12.5px; border-radius: 6px; border: 1.5px solid var(--gray-200); outline: none; background: #fff;">
-          <option value="" disabled selected>Pilih kerusakan yang benar...</option>
-          ${optionsHtml}
-        </select>
-        <button class="btn-secondary" id="btn-submit-feedback" style="padding: 8px 14px; font-size: 12.5px; font-weight: 600;" onclick="submitFeedback()">
-          Simpan Koreksi
-        </button>
-      </div>
-      <div id="feedback-success-msg" style="display: none; margin-top: 8px; font-size: 12px; color: var(--success); font-weight: 600;">
-        ✓ Sukses! Umpan balik dicatat dan prior empiris model diperbarui secara dinamis.
-      </div>
-    </div>`;
-}
-
-// Fungsi submit feedback ke backend secara asinkron
-async function submitFeedback() {
-  const selectEl = document.getElementById('feedback-select');
-  const successEl = document.getElementById('feedback-success-msg');
-  const btnEl = document.getElementById('btn-submit-feedback');
-  
-  const kerusakanSebenarnya = selectEl.value;
-  if (!kerusakanSebenarnya) {
-    alert("Silakan pilih jenis kerusakan yang benar terlebih dahulu.");
-    return;
-  }
-  
-  if (!window._lastResult) return;
-  
-  const payload = {
-    nama: window._lastResult.customer.nama,
-    tipe_hp: window._lastResult.customer.tipe_hp,
-    keluhan: window._lastResult.input.raw,
-    kerusakan_sebenarnya: kerusakanSebenarnya
-  };
-  
-  btnEl.disabled = true;
-  btnEl.textContent = "Menyimpan...";
-  
-  try {
-    const res = await fetch('/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const resData = await res.json();
-    
-    if (resData.success) {
-      successEl.style.display = "block";
-      successEl.textContent = `✓ Sukses! Prior '${kerusakanSebenarnya}' kini diperbarui menjadi ${(resData.new_prior * 100).toFixed(2)}% (total ${resData.total_cases} kasus).`;
-      
-      // Muat ulang info model agar tabel prior di layar langsung sinkron
-      await loadModelInfo();
-    } else {
-      alert("Gagal mengirim umpan balik: " + resData.error);
-    }
-  } catch (err) {
-    alert("Koneksi gagal: " + err.message);
-  } finally {
-    btnEl.disabled = false;
-    btnEl.textContent = "Simpan Koreksi";
-  }
-}
-
-// ============================================================
-// Model Info & Basis Pengetahuan
-// ============================================================
-async function loadModelInfo() {
-  try {
-    const res  = await fetch('/model-info');
-    const data = await res.json();
-    renderModelStats(data);
-    renderBeliefTable(data.rules);
-    renderPriorTable(data.class_priors);
-  } catch (err) {
-    console.error("Gagal memuat info model:", err);
-  }
-}
-
-function renderModelStats(data) {
-  document.getElementById('stat-rules').textContent   = data.total_rules;
-  document.getElementById('stat-classes').textContent = data.total_classes;
-  const dims = data.rules.reduce((s, r) => s + r.hypotheses.length, 0);
-  document.getElementById('stat-dims').textContent    = dims;
-}
-
-function renderBeliefTable(rules) {
-  const tbody = document.getElementById('belief-tbody');
-  tbody.innerHTML = '';
-  rules.forEach(rule => {
-    rule.hypotheses.forEach((hyp, i) => {
-      tbody.innerHTML += `
-        <tr>
-          ${i === 0 ? `<td rowspan="${rule.hypotheses.length}"><b>${escHtml(rule.symptom_col)}</b><br>
-            <small style="color:var(--gray-500)">= ${escHtml(rule.symptom_val)}</small></td>` : ''}
-          <td>${escHtml(hyp.damage)}</td>
-          <td class="belief-val">${hyp.optimal_belief.toFixed(4)}</td>
-          ${i === 0 ? `<td rowspan="${rule.hypotheses.length}" class="theta-val">${rule.uncertainty_theta.toFixed(4)}</td>` : ''}
-        </tr>`;
-    });
-  });
-}
-
-function renderPriorTable(priors) {
-  const tbody = document.getElementById('prior-tbody');
-  if (!tbody) return;
-  const sorted = Object.entries(priors).sort((a, b) => b[1] - a[1]);
-  const maxPrior = sorted[0][1];
-  tbody.innerHTML = sorted.map(([cls, p]) => {
-    const w = (p / maxPrior * 100).toFixed(1);
-    const pct = (p * 100).toFixed(2);
-    return `
-      <tr>
-        <td>${escHtml(cls)}</td>
-        <td style="width:130px">
-          <div style="display:flex;align-items:center;">
-            <div class="prior-bar-track" style="flex:1">
-              <div class="prior-bar-fill" style="width:${w}%"></div>
-            </div>
-          </div>
-        </td>
-        <td style="font-weight:600;color:var(--success)">${pct}%</td>
-      </tr>`;
-  }).join('');
-}
-
-// ---- Log Inferensi Terakhir ----
-function renderLastLog(data) {
-  const container = document.getElementById('last-inference-log');
-  const devLog    = data.dev_log;
-
-  let html = `
-    <div class="log-card">
-      <div class="log-header">📋 Log Inferensi & Langkah Kombinasi Dempster-Shafer</div>
-      <div class="log-body">
-
-        <div class="log-section-title">Informasi Kasus & Input</div>
-        <div class="mass-grid" style="margin-bottom: 12px;">
-          <div class="mass-row"><span class="mass-key">Nama Pelanggan</span><span class="mass-val">${escHtml(data.customer.nama)}</span></div>
-          <div class="mass-row"><span class="mass-key">Tipe iPhone</span><span class="mass-val">${escHtml(data.customer.tipe_hp)}</span></div>
-          <div class="mass-row"><span class="mass-key">Teks Keluhan</span><span class="mass-val" style="font-style: italic;">"${escHtml(data.input.raw)}"</span></div>
-          <div class="mass-row"><span class="mass-key">Prapemrosesan</span><span class="mass-val">${escHtml(data.input.normalized)}</span></div>
-        </div>
-
-        <div class="log-section-title">Gejala Terdeteksi & Nilai Belief Pakar (${devLog.active_rules.length} Aturan Aktif)</div>`;
-
-  if (devLog.active_rules.length === 0) {
-    html += `<div style="color:var(--gray-400);font-size:12.5px;padding:8px 0;">
-               Tidak ada gejala spesifik terdeteksi (semua bernilai 'Normal'). Model dialihkan ke mode fallback prior.
-             </div>`;
-  } else {
-    devLog.active_rules.forEach(rule => {
-      html += `<div class="log-rule-item">
-        <div class="rule-head">${escHtml(rule.symptom_col)} = ${escHtml(rule.symptom_val)}</div>`;
-      rule.hypotheses.forEach(hyp => {
-        html += `<div class="hyp-row">
-          <span>${escHtml(hyp.damage)}</span>
-          <span class="belief-val">m({${escHtml(hyp.damage)}}) = ${hyp.optimal_belief.toFixed(4)}</span>
-        </div>`;
-      });
-      html += `<div class="hyp-row" style="color:var(--gray-500); border-top:1px dashed rgba(0,0,0,0.06); padding-top:4px; margin-top:4px;">
-                 <span>Uncertainty (Θ)</span>
-                 <span>m(Θ) = ${rule.uncertainty_theta.toFixed(4)}</span>
-               </div>
-             </div>`;
-    });
-  }
-
-  // Langkah kombinasi DS
-  if (devLog.combination_steps.length > 1) {
-    html += `<div class="log-section-title">Langkah Kombinasi Dempster-Shafer</div>
-             <div class="mass-grid" style="margin-bottom:12px;">`;
-    devLog.combination_steps.forEach((step, i) => {
-      html += `<div class="mass-row" style="flex-direction:column;align-items:flex-start;gap:4px">
-                 <span class="mass-key" style="font-weight:600; color:var(--primary-dark)">Sumber ${i+1}: ${escHtml(step.source)}</span>`;
-      Object.entries(step.mass_function).forEach(([k, v]) => {
-        html += `<span style="color:var(--gray-500); padding-left:10px;">  m(${escHtml(k)}) = <b>${v}</b></span>`;
-      });
-      html += `</div>`;
-    });
-    html += `</div>`;
-  }
-
-  // Mass function gabungan akhir
-  if (Object.keys(devLog.final_mass_combined).length > 0) {
-    html += `<div class="log-section-title">Fungsi Massa Gabungan Akhir m_combined</div>
-             <div class="mass-grid" style="margin-bottom:12px;">`;
-    Object.entries(devLog.final_mass_combined).forEach(([k, v]) => {
-      html += `<div class="mass-row">
-                 <span class="mass-key">m(${escHtml(k)})</span>
-                 <span class="mass-val">${v}</span>
-               </div>`;
-    });
-    html += `</div>`;
-  }
-
-  // Probabilitas Pignistik
-  html += `<div class="log-section-title">Probabilitas Pignistik (BetP) Hasil Akhir</div>
-           <div class="mass-grid">`;
-  const sortedProbs = Object.entries(devLog.pignistic_probabilities)
-                            .sort((a, b) => b[1] - a[1]);
-  sortedProbs.forEach(([cls, p]) => {
-    html += `<div class="mass-row">
-               <span class="mass-key">${escHtml(cls)}</span>
-               <span class="mass-val">${(p * 100).toFixed(2)}%</span>
-             </div>`;
-  });
-  html += `</div>
-      </div>
-    </div>`;
-
-  container.innerHTML = html;
-}
-
-// ============================================================
-// Utilities & Startup
+// Utilities
 // ============================================================
 function escHtml(str) {
   return String(str)
@@ -503,5 +23,268 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// Load model info saat inisialisasi awal
-window.addEventListener('DOMContentLoaded', loadModelInfo);
+// ============================================================
+// Chatbot State Machine
+// ============================================================
+let chatState = { step: 0, name: '', tipe_hp: '', keluhan: '' };
+
+function addMsg(text, from, isHtml) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = from === 'bot' ? 'chat-msg-bot' : 'chat-msg-user';
+  if (isHtml) {
+    div.innerHTML = text;
+  } else {
+    div.textContent = text;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg-bot';
+  div.id = 'typing-bubble';
+  div.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-bubble');
+  if (el) el.remove();
+}
+
+function handleChatSend() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+  addMsg(text, 'user');
+  input.value = '';
+
+  if (chatState.step === 0) {
+    chatState.name = text;
+    chatState.step = 1;
+    setTimeout(() => addMsg('Halo, ' + text + '! Boleh tahu tipe iPhone kamu? (contoh: iPhone 12, iPhone 13 Pro)', 'bot'), 400);
+  } else if (chatState.step === 1) {
+    chatState.tipe_hp = text;
+    chatState.step = 2;
+    setTimeout(() => addMsg('Oke, ' + chatState.tipe_hp + '. Sekarang ceritakan keluhannya — apa yang terasa tidak normal dari ponsel kamu?', 'bot'), 400);
+  } else if (chatState.step === 2) {
+    chatState.keluhan = text;
+    chatState.step = 3;
+    showTyping();
+    setTimeout(() => runChatDiagnosis(), 600);
+  } else {
+    // Diagnosis sudah ada — reset untuk sesi baru
+    chatState = { step: 0, name: '', tipe_hp: '', keluhan: '' };
+    resultPanel.innerHTML = '<div class="result-placeholder"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Hasil diagnosis akan muncul di sini setelah percakapan selesai.</span></div>';
+    if (btnPrint) btnPrint.style.display = 'none';
+    addMsg('Siap! Ketik nama kamu untuk memulai diagnosa baru.', 'bot');
+    chatState.step = 0;
+  }
+}
+
+async function runChatDiagnosis() {
+  const { name, tipe_hp, keluhan } = chatState;
+  try {
+    const res  = await fetch('/diagnosa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nama: name, tipe_hp, keluhan })
+    });
+    const data = await res.json();
+    removeTyping();
+
+    if (!data.success) {
+      addMsg('Maaf, terjadi kesalahan: ' + (data.error || 'Server error.'), 'bot');
+      chatState.step = 2; // retry keluhan
+      return;
+    }
+
+    window._lastResult = data;
+
+    // Fill print fields
+    if (printNama)    printNama.textContent    = data.customer.nama;
+    if (printTipe)    printTipe.textContent    = data.customer.tipe_hp;
+    if (printWaktu)   printWaktu.textContent   = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' });
+    if (printKeluhan) printKeluhan.textContent = data.input.raw;
+    if (btnPrint)     btnPrint.style.display   = 'inline-flex';
+
+    renderResult(data);
+
+    const diagnosa = data.top_diagnosis || '-';
+    addMsg('Analisis selesai! Hasil ditampilkan di sebelah kanan. Perkiraan kerusakan: ' + diagnosa + '.', 'bot');
+    addMsg('Ketik pesan apa saja untuk memulai diagnosa baru.', 'bot');
+
+  } catch (err) {
+    removeTyping();
+    addMsg('Koneksi ke server gagal: ' + err.message, 'bot');
+    chatState.step = 2;
+  }
+}
+
+// ============================================================
+// Result Rendering
+// ============================================================
+function getCustomerExplanation(diagnosis) {
+  const map = {
+    'Baterai Rusak':        'Baterai iPhone kamu sudah menurun kinerjanya sehingga tidak bisa menyimpan daya dengan baik. Ini kerusakan umum — bisa diperbaiki dengan mengganti baterai baru.',
+    'LCD Rusak':            'Layar iPhone mengalami kerusakan — bisa tampilan gelap, warna aneh, atau garis-garis. Perlu penggantian modul LCD/OLED.',
+    'Touchscreen Rusak':    'Layar sentuh tidak merespons atau meleset. Biasanya perlu penggantian digitizer atau modul layar.',
+    'IC Power Rusak':       'Komponen utama pengatur daya bermasalah — ponsel tidak mau menyala atau sering mati sendiri. Perlu teknisi berpengalaman.',
+    'IC Cas Rusak':         'Chip pengisian daya bermasalah — baterai tidak terisi meski sudah disambungkan ke charger.',
+    'Port Pengisian Rusak': 'Port charger kotor atau rusak sehingga tidak bisa mengisi daya. Kadang cukup dibersihkan, atau perlu penggantian port.',
+    'Speaker Rusak':        'Speaker tidak mengeluarkan suara atau suaranya kecil/pecah. Perlu penggantian komponen speaker.',
+    'Mikrofon Rusak':       'Mikrofon bermasalah — suara tidak terdengar saat menelepon atau merekam.',
+    'IC Audio Rusak':       'Chip audio internal bermasalah — tidak ada suara sama sekali. Perlu perbaikan pada motherboard.',
+    'Kamera Rusak':         'Kamera mengalami kerusakan — gambar buram, tidak bisa dibuka, atau ada bercak di foto.',
+    'Tombol Rusak':         'Tombol fisik (volume, power, atau home) tidak berfungsi. Biasanya perlu penggantian tombol.',
+    'Antena Signal Rusak':  'Antena jaringan bermasalah — sinyal lemah atau tidak ada. Perlu pemeriksaan dan perbaikan antena.',
+    'Antena Wifi Rusak':    'Antena WiFi bermasalah — WiFi tidak terdeteksi atau sering putus.',
+    'Housing Rusak':        'Casing/bodi luar retak atau penyok. Perlu penggantian housing.',
+    'Backdoor Rusak':       'Penutup belakang retak atau rusak. Perlu penggantian backdoor/back glass.',
+    'IC WTR Rusak':         'Chip transceiver (WTR) bermasalah — sinyal jaringan sangat lemah atau tidak ada.',
+  };
+  return map[diagnosis] || 'Kerusakan terdeteksi. Bawa ke toko kami untuk pemeriksaan lebih lanjut.';
+}
+
+function getDamageIcon(diagnosis) {
+  const icons = {
+    'Baterai Rusak':    '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2"/></svg>',
+    'LCD Rusak':        '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+    'Touchscreen Rusak':'<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>',
+    'Speaker Rusak':    '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
+    'Kamera Rusak':     '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  };
+  return icons[diagnosis] || '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+}
+
+function renderResult(data) {
+  if (data.is_software) {
+    resultPanel.innerHTML = `
+      <div class="fallback-notice" style="display:block; background:var(--primary-light); border-color:#BFDBFE; color:var(--primary-dark);">
+        ℹ Masalah Sistem Operasi Terdeteksi (Software Gate Filter)
+      </div>
+      <div class="top-diagnosis-box" style="background:var(--success-light); border-color:#A7F3D0;">
+        <div class="top-diag-icon" style="background:var(--success);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="top-diag-label" style="color:var(--success);">Kesimpulan Diagnosis</div>
+          <div class="top-diag-name" style="color:#065F46;">${escHtml(data.top_diagnosis)}</div>
+          <div class="top-diag-pct" style="color:#065F46;">Tingkat Keyakinan: <b>100.0%</b> · Deteksi Kata Kunci Sistem</div>
+        </div>
+      </div>
+      <div style="font-size:13px; color:var(--gray-700); line-height:1.6; padding:14px; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:8px; margin-top:12px;">
+        <p style="margin-bottom:8px;"><b>Rekomendasi Tindakan:</b></p>
+        <p style="margin-bottom:4px;">Untuk memastikan keamanan data dan lisensi sistem perangkat Anda, masalah perangkat lunak (software) tingkat lanjut ini sebaiknya ditangani secara resmi.</p>
+        <p style="margin-bottom:0;">Silakan bawa iPhone Anda ke <b>Service Center Resmi Apple (AASP / iBox)</b> terdekat untuk proses pemulihan sistem yang aman.</p>
+      </div>`;
+    return;
+  }
+
+  const topPct  = data.top_percentage;
+  const allDiag = data.all_diagnoses;
+  const maxPct  = allDiag[0].percentage;
+
+  let badgeClass = 'high', badgeText = '🟢 Sangat Yakin (Akurasi Tinggi)';
+  if (topPct < 50)      { badgeClass = 'low';    badgeText = '🔵 Indikasi Awal (Perlu Pemeriksaan)'; }
+  else if (topPct < 75) { badgeClass = 'medium'; badgeText = '🟡 Cukup Yakin (Pemeriksaan Lanjutan)'; }
+
+  const explanation = getCustomerExplanation(data.top_diagnosis);
+  const icon        = getDamageIcon(data.top_diagnosis);
+
+  // Bar chart mini
+  const barsHtml = allDiag.map((d, i) => {
+    const w = maxPct > 0 ? (d.percentage / maxPct * 100).toFixed(1) : 0;
+    return `<div class="bar-row">
+      <span class="bar-label" title="${escHtml(d.damage)}">${escHtml(d.damage)}</span>
+      <div class="bar-track"><div class="bar-fill ${i === 0 ? 'bar-top' : 'bar-low'}" style="width:${w}%"></div></div>
+      <span class="bar-pct">${d.percentage.toFixed(1)}%</span>
+    </div>`;
+  }).join('');
+
+  resultPanel.innerHTML = `
+    <div class="customer-res-container">
+      <div class="customer-res-header">
+        <div class="customer-res-icon">${icon}</div>
+        <div class="customer-res-info">
+          <div class="customer-res-label">Perkiraan Kerusakan iPhone</div>
+          <div class="customer-res-title">${escHtml(data.top_diagnosis)}</div>
+          <div class="customer-badge ${badgeClass}">${badgeText}</div>
+        </div>
+      </div>
+
+      <div class="customer-section">
+        <div class="customer-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Penjelasan Kerusakan
+        </div>
+        <div class="customer-section-p">${explanation}</div>
+      </div>
+
+      <div class="customer-section">
+        <div class="customer-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Distribusi Keyakinan DS-PSO
+        </div>
+        <div class="bar-list" style="margin-top:8px;">${barsHtml}</div>
+      </div>
+
+      <div class="customer-section">
+        <div class="customer-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Saran Servis
+        </div>
+        <div class="customer-section-p">Bawa perangkat ke counter <b>NST Phone Repair</b>. Teknisi kami akan melakukan pengujian hardware gratis untuk mengonfirmasi sebelum pengerjaan.</div>
+      </div>
+
+      <div class="customer-actions print-hide">
+        <button type="button" class="customer-btn-action primary" onclick="window.print()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Cetak Nota Diagnosis
+        </button>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// Model Info (sidebar stats only)
+// ============================================================
+async function loadModelInfo() {
+  try {
+    const res  = await fetch('/model-info');
+    const data = await res.json();
+    const rulesEl   = document.getElementById('stat-rules');
+    const classesEl = document.getElementById('stat-classes');
+    if (rulesEl)   rulesEl.textContent   = data.total_rules;
+    if (classesEl) classesEl.textContent = data.total_classes;
+  } catch (err) {
+    console.error('Gagal memuat info model:', err);
+  }
+}
+
+// ============================================================
+// Event Listeners
+// ============================================================
+document.getElementById('chat-send').addEventListener('click', handleChatSend);
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); handleChatSend(); }
+});
+
+// ============================================================
+// Startup
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  loadModelInfo();
+  // Tampilkan pesan sapaan awal
+  setTimeout(() => {
+    addMsg('Halo! Saya asisten NST Repair. Saya akan bantu diagnosa kerusakan iPhone kamu. 😊', 'bot');
+    setTimeout(() => addMsg('Pertama, boleh tahu nama kamu?', 'bot'), 600);
+  }, 300);
+});
